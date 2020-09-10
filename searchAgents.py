@@ -295,14 +295,21 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        
+        start = self.startingPosition
+        corners = self.corners
+
+        return [start, corners] # Pac-Man coordinates start and the corners of the layout
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        
+        isGoalState = len(state[1]) == 0
+
+        return isGoalState  # Are there any corners remaining?
 
     def getSuccessors(self, state):
         """
@@ -325,6 +332,22 @@ class CornersProblem(search.SearchProblem):
             #   hitsWall = self.walls[nextx][nexty]
 
             "*** YOUR CODE HERE ***"
+
+            x, y = state[0]   # Pac-Man coordinates
+            dx, dy = Actions.directionToVector(action)  # Change in coordinates
+            nextX, nextY = int(x + dx), int(y + dy) # Next coordinates
+            badMove = self.walls[nextX][nextY]  # Does Pac-Man hit a wall?
+            if not badMove:
+                nextPos = (nextX, nextY)
+                cost = 0    # Lower bound
+                if nextPos in state[1]: # Is this a corner?
+                    cornersRemaining = list(state[1])
+                    cornersRemaining.remove(nextPos)
+                    child = [nextPos, cornersRemaining] # Corners remaining reduced
+                else:
+                    child = [nextPos, state[1]] # Not a corner, continue
+
+                successors.append([child, action, cost])    # Since Pac-Man did not hit a wall, add the move as a successor to the given state
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -360,7 +383,24 @@ def cornersHeuristic(state, problem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+
+    cornersRemaining = list(state[1])   # Corners remaining
+    heuristic = 0
+    currentPos = state[0]   # x, y Coordinates
+
+    while not len(cornersRemaining) == 0:   # Are there corners remaining?
+        distances = []  # List of distances to corners
+        for goal in cornersRemaining:   # A goal is a corner
+            start = currentPos
+            distance = util.manhattanDistance(goal, start)
+            distances.append(distance)
+        
+        minDist = min(distances)
+        heuristic += minDist    # Shortest distance is added to the heuristic
+        currentPos = cornersRemaining[distances.index(minDist)]
+        cornersRemaining.remove(currentPos) # Remove the corner that is closest
+
+    return heuristic
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -454,7 +494,23 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+
+    # Same as cornersHeuristic, but with all pellets instead of corners
+    heuristic = 0
+    pellets = foodGrid.asList()
+    if len(pellets) == 0 or problem.isGoalState(state):
+        return heuristic
+
+    distances = []
+    for x, y in pellets:
+        goal = [x, y]
+        start = position
+        distance = util.manhattanDistance(goal, start)
+        distances.append(distance)
+        minDist = min(distances)
+
+    heuristic += minDist
+    return heuristic
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -485,7 +541,8 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        return search.breadthFirstSearch(problem)   # Greedy choice, BFS searches closer to Pac-Man first
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -521,7 +578,9 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        pellets = self.food.asList()
+        return state in pellets # Is this Pac-Man state also a pellet state?
 
 def mazeDistance(point1, point2, gameState):
     """

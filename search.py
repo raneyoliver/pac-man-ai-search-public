@@ -87,17 +87,107 @@ def depthFirstSearch(problem):
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
 
+    # FIFO for DFS
+    positions = util.Stack()    # Keeps coordinates
+    directions = util.Stack()   # Keeps moves that lead to every path
+    explored = []               # Visited coordinates
+    solution = []               # Set of directions returned
+    
+    positions.push(problem.getStartState()) # Base
+    if problem.isGoalState(problem.getStartState()) or positions.isEmpty():
+        return []   # No moves needed, started at goal
+
+    pathFound = False
+    currentPos = positions.pop()
+    while not pathFound:
+        if currentPos not in explored:
+            explored.append(currentPos)
+            possibleMoves = problem.getSuccessors(currentPos)   # possibleMoves holds tuples
+
+            for position, direction, _ in possibleMoves:    # Add each successor detail to stack
+                positions.push(position)
+                directions.push(solution + [direction]) # Get previous moves for this path and add onto them
+
+
+        currentPos = positions.pop()    # Iteration
+        solution = directions.pop()
+        if problem.isGoalState(currentPos): # Check if we can stop
+            pathFound = True
+
+
+    return solution
+    
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    
+    # LIFO for BFS, same variables as DFS
+    positions = util.Queue()
+    directions = util.Queue()
+    explored = []
+    solution = []
+
+    positions.push(problem.getStartState())
+    if problem.isGoalState(problem.getStartState()) or positions.isEmpty():
+        return []
+
+    pathFound = False
+    currentPos = positions.pop()
+    while not pathFound:
+        if currentPos not in explored:
+            explored.append(currentPos)
+            possibleMoves = problem.getSuccessors(currentPos)
+
+            for position, direction, _ in possibleMoves:    # Same situation as DFS, just LIFO
+                positions.push(position)
+                directions.push(solution + [direction])
+
+
+        currentPos = positions.pop()
+        solution = directions.pop()
+        if problem.isGoalState(currentPos):
+            pathFound = True
+
+
+    return solution
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # Popping based on a cost, same variables as DFS and BFS
+    positions = util.PriorityQueue()
+    directions = util.PriorityQueue()
+    explored = []
+    solution = []
+
+    positions.push(problem.getStartState(), 0)  # Need to add on the cost for the Priority Queue. Cost is 0 since we start here
+    if problem.isGoalState(problem.getStartState()) or positions.isEmpty():
+        return []
+
+    pathFound = False
+    currentPos = positions.pop()
+    while not pathFound:
+        if currentPos not in explored:
+            explored.append(currentPos)
+            possibleMoves = problem.getSuccessors(currentPos)
+
+            for position, direction, _ in possibleMoves:    # Same situation as DFS and BFS, just add the cost
+                cost = problem.getCostOfActions(solution + [direction]) # Temporary variable
+                if positions not in explored:
+                    positions.push(position, cost)
+                    directions.push(solution + [direction], cost)
+
+            
+            
+        currentPos = positions.pop()
+        solution = directions.pop()
+        if problem.isGoalState(currentPos):
+            pathFound = True
+
+
+    return solution
 
 def nullHeuristic(state, problem=None):
     """
@@ -109,8 +199,39 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
 
+    # Popping still based on a cost, same variables
+    positions = util.PriorityQueue()
+    directions = util.PriorityQueue()
+    explored = []
+    solution = []
+
+    positions.push(problem.getStartState(), 0)  # Cost is still zero
+    if problem.isGoalState(problem.getStartState()) or positions.isEmpty():
+        return []
+
+    pathFound = False
+    currentPos = positions.pop()
+    while not pathFound:
+        if currentPos not in explored:
+            explored.append(currentPos)
+            possibleMoves = problem.getSuccessors(currentPos)
+            for position, direction, _ in possibleMoves:    # Instead of just the cost we push the heuristic function along with the coordinates and moves
+                cost = problem.getCostOfActions(solution + [direction])
+                heuristicCost = cost + heuristic(position, problem) # New temporary variable: heuristicCost = f(n) + g(n)
+                if position not in explored:
+                    positions.push(position, heuristicCost)
+                    directions.push(solution + [direction], heuristicCost)
+
+
+        
+        currentPos = positions.pop()
+        solution = directions.pop()
+        if problem.isGoalState(currentPos):
+            pathFound = True
+
+
+    return solution
 
 # Abbreviations
 bfs = breadthFirstSearch
